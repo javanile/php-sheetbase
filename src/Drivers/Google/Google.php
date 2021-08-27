@@ -454,26 +454,26 @@ class Google implements DriverInterface
 		
 		##
 		return $transkey;	
-	} 
-	
-	##
-	public function getRowCount() {
-		
-		##
-		$this->requireWorksheet();
-		
-		##
-		return (int) $this->worksheet->getRowCount();
 	}
-	
-	##
-	public function getColCount() {
 
-		##
-		$this->requireWorksheet();
+    /**
+     * @return int
+     */
+	public function getRowCount()
+    {
+		$this->requireSheet();
 
-		##
-		return (int) $this->worksheet->getColCount();
+		return (int) $this->sheet->getProperties()->getGridProperties()->rowCount;
+	}
+
+    /**
+     * @return int
+     */
+	public function getColCount()
+    {
+        $this->requireSheet();
+
+        return (int) $this->sheet->getProperties()->getGridProperties()->columnCount;
 	}
 	
 	##

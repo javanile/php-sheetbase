@@ -72,7 +72,12 @@ class GoogleTest extends TestCase
     {}
 
     public function testGetRowCount()
-    {}
+    {
+        $this->driver->setDatabase('test');
+        $this->driver->setTable('test');
+        $count = $this->driver->getRowCount();
+        var_dump($count);
+    }
 
     public function testGetColCount()
     {}
