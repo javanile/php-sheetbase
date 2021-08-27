@@ -69,16 +69,35 @@ class GoogleTest extends TestCase
     }
 
     public function testAll()
-    {}
+    {
+        $this->driver->setDatabase('test');
+        $this->driver->setTable('test');
+        $data = $this->driver->all();
+
+        $this->assertTrue(is_array($data));
+        foreach ($data as $row) {
+            $this->assertTrue(is_array($row));
+            foreach ($row as $cell) {
+                $this->assertFalse(is_array($cell));
+            }
+        }
+    }
 
     public function testGetRowCount()
     {
         $this->driver->setDatabase('test');
         $this->driver->setTable('test');
         $count = $this->driver->getRowCount();
-        var_dump($count);
+
+        $this->assertTrue($count > 0);
     }
 
     public function testGetColCount()
-    {}
+    {
+        $this->driver->setDatabase('test');
+        $this->driver->setTable('test');
+        $count = $this->driver->getRowCount();
+
+        $this->assertTrue($count > 0);
+    }
 }

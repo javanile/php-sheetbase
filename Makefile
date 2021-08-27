@@ -15,5 +15,8 @@ test-driver-google-get-tables:
 test-driver-google-insert:
 	@docker-compose run --rm phpunit tests --filter GoogleTest::testInsert
 
+test-driver-google-all:
+	@docker-compose run --rm phpunit tests --filter GoogleTest::testAll
+
 test-driver-google-get-row-count:
 	@docker-compose run --rm phpunit tests --filter GoogleTest::testGetRowCount

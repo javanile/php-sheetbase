@@ -47,6 +47,11 @@ class Google implements DriverInterface
     /**
      * @var null
      */
+    private $sheetTitle = null;
+
+    /**
+     * @var null
+     */
 	private $sheets = null;
 
     /**
@@ -411,32 +416,20 @@ class Google implements DriverInterface
 
         //echo '<pre>', var_export($response, true), '</pre>', "\n";
 	}
-		
-	##
-	public function all() {
-				
-		##
-		$this->requireCell();
-		
-		##
-		$data = array();
-		
-		##
-		for($row=1; $row<=$this->worksheet->getRowCount(); $row++) {
-			
-			##
-			for($col=1; $col<=$this->worksheet->getColCount(); $col++) {
 
-				##
-				$cell = $this->cell->getCell($row,$col);
-				
-				##
-				$data[$row][$col] = $cell ? $cell->getContent() : ''; 												 		
-			}
-		}
-				
-		##
-		return $data;				
+    /**
+     * @return array
+     */
+	public function all()
+    {
+        $this->requireSheetTitle();
+
+        $range = $this->sheetTitle.'!A1:Z10';
+        $response = $this->service->spreadsheets_values->get($this->currentSpreadsheetId, $range);
+
+        //echo '<pre>', var_export($response, true), '</pre>', "\n";
+
+        return $response->values;
 	}
 	
 	##
@@ -602,5 +595,18 @@ class Google implements DriverInterface
                 $this->sheet = $sheet;
             }
         }
+    }
+
+    /**
+     * @throws \Exception
+     */
+    protected function requireSheetTitle()
+    {
+        if ($this->sheetTitle !== null) {
+            return;
+        }
+
+        $this->requireSheet();
+        $this->sheetTitle = $this->sheet->getProperties()->getTitle();
     }
 }
