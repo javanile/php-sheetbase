@@ -1,40 +1,46 @@
 <?php
 
-namespace Javanile\Sheetbase\Providers;
+namespace Javanile\Sheetbase\Drivers\Google;
+
+use Javanile\Sheetbase\DriverInterface;
 
 /**
  *
  */
-class Google
+class Google implements DriverInterface
 {
-	##
+    /**
+     * @var mixed|null
+     */
 	private $databases = null;
-	
-	##	
-	private $databaseid = null;
-	
-	##
-	private $database = null;
-			
+
+    /**
+     * @var null
+     */
+    private $currentDatabase = null;
+
+    /**
+     * @var null
+     */
+	private $currentSpreadsheetId = null;
+
+
 	##
 	private $table = null;
 	
 	##	
 	private $worksheet = null;
-	
-	##
-	private $worksheets = null;
-	
-	##
-	private $currentSpreadsheetId = null;
-		
+
+    /**
+     * @var null
+     */
+	private $sheets = null;
+
 	##
 	private $cell = null;
 	
 	##
 	private $list = null;
-
-	##
 
     /**
      * @throws \Exception
@@ -83,60 +89,56 @@ class Google
     }
 
 	##
-	public function setDatabase($database) {
-	
-		##
-		if (!$this->hasDatabase($database)) {
-			throw new Exception('No database found: "'.$database.'"');			
+	public function setDatabase($database)
+    {
+        if (empty($database)) {
+            throw new \Exception('Invalid database name');
+        }
+
+        if ($database == $this->currentDatabase) {
+            return $database;
+        }
+
+        if (!$this->hasDatabase($database)) {
+			throw new \Exception('No database found: "'.$database.'"');
 		}
-	
-		##
-		if ($database != $this->database) {
-		
-			##
-			$this->database = $database; 
 
-			##
-			$this->databaseid = $this->getDatabaseId($database);
-
-			##
-			$this->table = null;
-			
-			##
-			$this->spreadsheet = null;
-			
-			##
-			$this->worksheets = null;
-
-			##	
-			$this->worksheet = null;
-
-			##
-			$this->cell = null;
-
-			##
-			$this->list = null;
-		}
+        $this->currentDatabase = $database;
+        $this->currentSpreadsheetId = $this->getSpreadsheetId($database);
+        $this->table = null;
+        $this->spreadsheet = null;
+        $this->worksheets = null;
+        $this->worksheet = null;
+        $this->cell = null;
+        $this->list = null;
 	}
-	
-	##
-	public function hasDatabase($name) {
-	
-		##
-		return isset($this->databases[$name]);		
+
+    /**
+     * @param $name
+     * @return bool
+     */
+	public function hasDatabase($name)
+    {
+		return isset($this->databases[$name]);
 	}
-	
-	##
-	public function getDatabaseId($name) {
-	
-		##
+
+    /**
+     * @param $name
+     * @return mixed
+     */
+	public function getSpreadsheetId($name)
+    {
 		return $this->databases[$name];		
 	}
-	
-	##
-	public function getDatabase($databaseid) {
-		foreach($this->databases as $database=>$id) {
-			if ($id == $databaseid) {
+
+    /**
+     * @param $spreadsheetId
+     * @return int|string|void
+     */
+	protected function getDatabaseBySpreadsheetId($spreadsheetId)
+    {
+		foreach ($this->databases as $database => $id) {
+			if ($id == $spreadsheetId) {
 				return $database;
 			}			
 		}		
@@ -146,14 +148,15 @@ class Google
      * @param $table
      * @param int $cols
      * @param null $rows
+     *
+     * @throws \Exception
      */
 	public function addTable($table, $cols = 10, $rows = null)
     {
 		if ($this->hasTable($table)) {
-			throw new Exception('Table already exists: "'.$table.'"');						
+			throw new \Exception('Table already exists: "'.$table.'"');
 		}
-				
-		##
+
 		$this->requireSpreadsheet();
 				
 		$fields = array();
@@ -217,8 +220,8 @@ class Google
 		}
 		*/
 
-		##
-		$this->worksheets = null;			
+		//
+		$this->sheets = null;
 	}
 
     /**
@@ -227,7 +230,7 @@ class Google
      */
 	public function hasTable($name)
     {
-		$this->requireWorksheets();
+		$this->requireSheets();
 		//return (boolean) $this->worksheets->getByTitle($name);
         return false;
 	}
@@ -251,22 +254,19 @@ class Google
 			$this->list = null;			
 		} 		
  	}
-	
-	##
-	public function getTables() {
-		
-		##
-		$this->requireWorksheets();
-		
-		##
-		$tables = array(); 
-		
-		##
-		foreach($this->worksheets as $item) {
-			$tables[] = strtolower($item->getTitle()); 
+
+    /**
+     * @return mixed|void
+     */
+	public function getTables()
+    {
+		$this->requireSheets();
+
+		$tables = array();
+		foreach($this->sheets as $sheet) {
+			$tables[] = strtolower($sheet->getTitle());
 		}
-				
-		##
+
 		return $tables;		
 	}
 		
@@ -297,7 +297,8 @@ class Google
 	}
 		
 	##
-	public function search($query,$col=1) {		
+	public function search($query,$col=1)
+    {
 		
 		if (is_array($query)||is_object($query)) {
 			
@@ -380,15 +381,22 @@ class Google
 		##
 		return $data;				
 	}
-	
-	##
-	public function insert($row) {
-		
-		##
-		$this->requireList();
-					
-		##
-		$this->list->insert($row); 		
+
+    /**
+     * @param $row
+     */
+	public function insert($row)
+    {
+        $this->requireDatabase();
+		//$this->requireList();
+        $range = 'principale!A1:E1';  // TODO: Update placeholder value.
+        $requestBody = new \Google\Service\Sheets\ValueRange();
+
+        $response = $this->gss->spreadsheets_values->append($this->currentSpreadsheetId, $range, $requestBody, [
+            'valueInputOption' => 'RAW'
+        ]);
+
+        echo '<pre>', var_export($response, true), '</pre>', "\n";
 	}
 		
 	##
@@ -480,14 +488,25 @@ class Google
 	}
 	
 	##
-	public function requireWorksheets() {
+	public function requireSheets()
+    {
 	
 		##
 		$this->requireSpreadsheet();
 		    	
 		##
-		// $this->worksheets = $this->spreadsheet->getWorksheets();
+		$this->sheets = $this->getSheets();
 	}
+
+    /**
+     *
+     */
+	protected function getSheets()
+    {
+        $response = $this->gss->spreadsheets->get($this->currentSpreadsheetId);
+
+        return $response->sheets;
+    }
 
     /**
      *
@@ -509,13 +528,15 @@ class Google
 			$this->list = $this->worksheet->getListFeed();
 		}
 	}
-	
-	##
-	public function requireDatabase() {		
-		
-		##
-		if (!$this->database) {
-			throw new Exception("GoogleDB-DRIVE require database: use setDatabase(.)");
+
+    /**
+     *
+     * @throws \Exception
+     */
+	public function requireDatabase()
+    {
+		if (empty($this->currentDatabase)) {
+			throw new \Exception("GoogleDB-DRIVE require database: use setDatabase(.)");
 		}			
 	}
 
@@ -531,44 +552,5 @@ class Google
 		}			
 	}
 
-	protected function authWithP12()
-    {
 
-        ##
-        $key = file_get_contents($args['p12']);
-
-        ##
-        $gac = new Google_Auth_AssertionCredentials(
-            $args['emailapp'],
-            array(
-                'https://spreadsheets.google.com/feeds',
-                "https://www.googleapis.com/auth/drive",
-                "https://www.googleapis.com/auth/drive.file",
-                "https://www.googleapis.com/auth/drive.readonly",
-                "https://www.googleapis.com/auth/drive.metadata.readonly",
-                "https://www.googleapis.com/auth/drive.appdata",
-                "https://www.googleapis.com/auth/drive.apps.readonly",
-                "https://www.googleapis.com/auth/drive.metadata",
-            ),
-            $key
-        );
-
-        ##
-        $this->gc->setAssertionCredentials($gac);
-
-        ##
-        if ($this->gc->getAuth()->isAccessTokenExpired()) {
-            $this->gc->getAuth()->refreshTokenWithAssertion($gac);
-        }
-
-        ##
-        $at = json_decode($this->gc->getAuth()->getAccessToken());
-
-
-        ##
-        $serviceRequest = new Google\Spreadsheet\DefaultServiceRequest($at->access_token);
-        ##
-        Google\Spreadsheet\ServiceRequestFactory::setInstance($serviceRequest);
-
-    }
 }

@@ -5,7 +5,7 @@ namespace Javanile\Sheetbase;
 /**
  *
  */
-class Database
+class Database implements DriverInterface
 {
     /**
      * @var null
