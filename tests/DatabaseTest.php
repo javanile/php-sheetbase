@@ -1,6 +1,6 @@
 <?php
 
-namespace Javanile\MysqlImport\Tests;
+namespace Javanile\Sheetbase\Tests;
 
 use Javanile\Sheetbase\Database;
 use PHPUnit\Framework\TestCase;
@@ -9,15 +9,19 @@ class DatabaseTest extends TestCase
 {
     public function testConnect()
     {
-        $file = __DIR__.'/fixtures/database.sql';
-        $message = "Unknown option '-kWrong'.";
+        $db = new Database([
+            'client_id' => getenv('GOOGLE_CLIENT_ID'),
+            'email_app' => getenv('GOOGLE_EMAIL_APP'),
+            'p12_file' => getenv('GOOGLE_P12_FILE'),
 
-        $mysqlImport = new MysqlImport(['MYSQL_ROOT_PASSWORD' => 'secret'], [$file, '-kWrong']);
-        $this->assertEquals($message, $mysqlImport->run());
-        $this->assertEquals(2, $mysqlImport->getExitCode());
+            'database' => [
+                'test' => getenv('GOOGLE_DATABASE'),
+            ],
 
-        $mysqlImport = new MysqlImport([], ['-psecret', '-kWrong', $file]);
-        $this->assertEquals($message, $mysqlImport->run());
-        $this->assertEquals(2, $mysqlImport->getExitCode());
+            'cache' => false,
+        ]);
+
+        //$this->assertEquals($message, $mysqlImport->run());
+        //$this->assertEquals(2, $mysqlImport->getExitCode());
     }
 }

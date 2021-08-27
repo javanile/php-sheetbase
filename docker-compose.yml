@@ -13,6 +13,7 @@ services:
   phpunit:
     extends: { service: php }
     entrypoint: ['./vendor/bin/phpunit']
+    env_file: ['.env']
 
 volumes:
   mysql:
