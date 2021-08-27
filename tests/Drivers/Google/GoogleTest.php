@@ -2,7 +2,6 @@
 
 namespace Javanile\Sheetbase\Drivers\Tests;
 
-use Javanile\Sheetbase\Database;
 use Javanile\Sheetbase\Drivers\Google\Google;
 use PHPUnit\Framework\TestCase;
 
@@ -14,7 +13,9 @@ class GoogleTest extends TestCase
     {
         $this->driver = new Google([
             'json_file' => getenv('GOOGLE_AUTH_JSON_FILE'),
-            'database' => [ 'test' => getenv('GOOGLE_DATABASE') ],
+            'database' => [
+                'test' => getenv('GOOGLE_DATABASE')
+            ],
             'cache' => false,
         ]);
 
@@ -25,31 +26,73 @@ class GoogleTest extends TestCase
     }
 
     public function testAddDatabase()
-    {}
+    {
+        $database = 'test-'.time();
+        $spreadsheetId = $this->driver->addDatabase($database);
+
+        $this->assertTrue(strlen($spreadsheetId) == 44);
+    }
 
     public function testSetDatabase()
     {
+        $newDatabase = 'test-'.time();
+        $newTable = 'table-'.$newDatabase;
 
+        $this->driver->setDatabase('test');
+        $tables = $this->driver->getTables();
+        $this->assertFalse(in_array($newTable, $tables));
+
+        $this->driver->addDatabase($newDatabase);
+        $this->driver->setDatabase($newDatabase);
+        $this->driver->addTable($newTable);
+        $tables = $this->driver->getTables();
+        $this->assertTrue(in_array($newTable, $tables));
+
+        $this->driver->setDatabase('test');
+        $tables = $this->driver->getTables();
+        $this->assertFalse(in_array($newTable, $tables));
     }
 
     public function testHasDatabase()
     {
-
+        $this->assertTrue($this->driver->hasDatabase('test'));
+        $this->assertFalse($this->driver->hasDatabase('random-database-name-'.time()));
     }
 
     public function testAddTable()
     {
-
+        $newTable = 'table-'.time();
+        $this->driver->setDatabase('test');
+        $this->driver->addTable($newTable);
+        $tables = $this->driver->getTables();
+        $this->assertTrue(in_array($newTable, $tables));
     }
 
     public function testHasTable()
     {
-
+        $this->driver->setDatabase('test');
+        $this->assertTrue($this->driver->hasTable('test'));
     }
 
     public function testSetTable()
     {
+        $newTable = 'table-'.time();
+        $newValue1 = 'value-'.rand(1, 1000);
+        $newValue2 = 'value-'.rand(1001, 2000);
 
+        $this->driver->setDatabase('test');
+        $this->driver->setTable('test');
+        $this->driver->set(1, 1, $newValue1);
+
+        $this->driver->addTable($newTable);
+        $this->driver->setTable($newTable);
+        $this->driver->set(1, 1, $newValue2);
+
+        $this->driver->setTable('test');
+        $this->assertEquals($newValue1, $this->driver->get(1, 1));
+
+        $this->driver->setTable($newTable);
+        $this->assertEquals($newValue2, $this->driver->get(1, 1));
     }
 
     public function testGetTables()
@@ -61,12 +104,18 @@ class GoogleTest extends TestCase
 
     public function testSet()
     {
-
+        $this->driver->setDatabase('test');
+        $this->driver->setTable('test');
+        $this->assertEquals(1, $this->driver->set(0, 0, 'Hello World!'));
     }
 
     public function testGet()
     {
-
+        $newValue = 'value-'.time();
+        $this->driver->setDatabase('test');
+        $this->driver->setTable('test');
+        $this->assertEquals(1, $this->driver->set(0, 0, $newValue));
+        $this->assertEquals($newValue, $this->driver->get(0, 0));
     }
 
     public function testSearch()

@@ -27,12 +27,17 @@ class Google implements DriverInterface
     /**
      * @var null
      */
-    private $currentDatabase = null;
+    private $database = null;
 
     /**
      * @var null
      */
-	private $currentSpreadsheetId = null;
+	private $spreadsheetId = null;
+
+    /**
+     * @var null
+     */
+    private $spreadsheet = null;
 
     /**
      * @var null
@@ -47,23 +52,17 @@ class Google implements DriverInterface
     /**
      * @var null
      */
-    private $sheetTitle = null;
+    protected $sheetTitle = null;
 
     /**
      * @var null
      */
-	private $sheets = null;
+	protected $sheets = null;
 
     /**
      * @var null
      */
-    private $tables = null;
-
-	##
-	private $cell = null;
-	
-	##
-	private $list = null;
+    protected $tables = null;
 
     /**
      * @throws \Exception
@@ -101,14 +100,23 @@ class Google implements DriverInterface
      */
     public function addDatabase($database)
     {
+        if ($this->hasDatabase($database)) {
+            throw new \Exception("Database with name '{$database}' already exists.");
+        }
+
         $spreadsheet = new \Google\Service\Sheets\Spreadsheet([
             'properties' => [
                 'title' => $database
             ]
         ]);
-        $spreadsheet = $this->service->spreadsheets->create($spreadsheet, [
+
+        $response = $this->service->spreadsheets->create($spreadsheet, [
             'fields' => 'spreadsheetId'
         ]);
+
+        $this->databases[$database] = $response->spreadsheetId;
+
+        return $response->spreadsheetId;
     }
 
 	##
@@ -118,7 +126,7 @@ class Google implements DriverInterface
             throw new \Exception('Invalid database name');
         }
 
-        if ($database == $this->currentDatabase) {
+        if ($database == $this->database) {
             return $database;
         }
 
@@ -126,14 +134,13 @@ class Google implements DriverInterface
 			throw new \Exception('No database found: "'.$database.'"');
 		}
 
-        $this->currentDatabase = $database;
-        $this->currentSpreadsheetId = $this->getSpreadsheetId($database);
-        $this->table = null;
+        $this->database = $database;
+        $this->spreadsheetId = $this->getSpreadsheetId($database);
         $this->spreadsheet = null;
-        $this->worksheets = null;
-        $this->worksheet = null;
-        $this->cell = null;
-        $this->list = null;
+        $this->table = null;
+        $this->tables = null;
+        $this->sheet = null;
+        $this->sheets = null;
 	}
 
     /**
@@ -194,7 +201,7 @@ class Google implements DriverInterface
 		}
 
         $response = $this->service->spreadsheets->batchUpdate(
-            $this->currentSpreadsheetId,
+            $this->spreadsheetId,
             new \Google\Service\Sheets\BatchUpdateSpreadsheetRequest([
                 'requests' => [
                     new \Google\Service\Sheets\Request([
@@ -280,31 +287,46 @@ class Google implements DriverInterface
 
 		return $tables;		
 	}
-		
-	##
-	public function set($row,$col,$value) {
-		
-		##
-		$this->requireCell();
-				
-		##
-		$this->cell->editCell($row,$col,strtr($value,'"&',' -'));		
+
+    /**
+     * @param $row
+     * @param $col
+     * @param $value
+     * @return mixed|void
+     */
+	public function set($row, $col, $value)
+    {
+        $this->requireSheetTitle();
+        $range = '\''.$this->sheetTitle.'\'!R['.$row.']C['.$col.']';
+        $requestBody = new \Google\Service\Sheets\ValueRange(['values' => [[$value]]]);
+        $response = $this->service->spreadsheets_values->update($this->spreadsheetId, $range, $requestBody, [
+            'valueInputOption' => 'RAW'
+        ]);
+
+        //@TODO: evaluate escapes problems, below line was an escapes for '"' and '&'
+        //$this->cell->editCell($row, $col, strtr($value,'"&',' -'));
+
+        //echo '<pre>', var_export($response, true), '</pre>', "\n";
+
+        return $response->updatedCells;
 	}
-		
-	##
-	public function get($row,$col) {
-		
-		##
-		$this->requireCell();
-		
-		##
-		$cell = $this->cell->getCell($row,$col);
-		
-		if ($cell) {
-			return $cell->getContent();
-		} else {
-			return '';			
-		}			
+
+    /**
+     * @param $row
+     * @param $col
+     *
+     * @return mixed|string
+     */
+	public function get($row, $col)
+    {
+        $this->requireSheetTitle();
+
+        $range = '\''.$this->sheetTitle.'\'!R['.$row.']C['.$col.']';
+        $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
+
+        //echo '<pre>', var_export($response->values, true), '</pre>', "\n";
+
+        return $response->values[0][0];
 	}
 		
 	##
@@ -410,7 +432,7 @@ class Google implements DriverInterface
             ]
         ]);
 
-        $response = $this->service->spreadsheets_values->append($this->currentSpreadsheetId, $range, $requestBody, [
+        $response = $this->service->spreadsheets_values->append($this->spreadsheetId, $range, $requestBody, [
             'valueInputOption' => 'RAW'
         ]);
 
@@ -427,7 +449,7 @@ class Google implements DriverInterface
         $this->requireSheetTitle();
 
         $range = $this->sheetTitle;
-        $response = $this->service->spreadsheets_values->get($this->currentSpreadsheetId, $range);
+        $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
 
         //echo '<pre>', var_export($response->values, true), '</pre>', "\n";
 
@@ -532,7 +554,7 @@ class Google implements DriverInterface
      */
 	protected function getSheets()
     {
-        $response = $this->service->spreadsheets->get($this->currentSpreadsheetId);
+        $response = $this->service->spreadsheets->get($this->spreadsheetId);
 
         return $response->sheets;
     }
@@ -544,7 +566,7 @@ class Google implements DriverInterface
 	public function requireSpreadsheet()
     {
 		$this->requireDatabase();
-		$this->spreadsheet = $this->service->spreadsheets->get($this->currentSpreadsheetId);
+		$this->spreadsheet = $this->service->spreadsheets->get($this->spreadsheetId);
 	}
 		
 	##
@@ -565,7 +587,7 @@ class Google implements DriverInterface
      */
 	public function requireDatabase()
     {
-		if (empty($this->currentDatabase)) {
+		if (empty($this->database)) {
 			throw new \Exception("GoogleDB-DRIVE require database: use setDatabase(.)");
 		}			
 	}
