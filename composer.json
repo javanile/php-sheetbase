@@ -1,0 +1,30 @@
+{
+  "name": "javanile/php-sheetbase",
+  "description": "Use famous cloud spreadsheet app as database",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Francesco Bianco",
+      "email": "bianco@javanile.org"
+    }
+  ],
+  "bin": [
+    "bin/sheetbase",
+    "bin/sheetdump"
+  ],
+  "autoload": {
+    "psr-4": {
+      "Javanile\\Sheetbase\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Javanile\\Sheetbase\\Tests\\": "tests"
+    }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^5.6"
+  }
+}
