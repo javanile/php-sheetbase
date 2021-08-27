@@ -17,6 +17,11 @@ class GoogleTest extends TestCase
             'database' => [ 'test' => getenv('GOOGLE_DATABASE') ],
             'cache' => false,
         ]);
+
+        $this->driver->setDatabase('test');
+        if (!$this->driver->hasTable('test')) {
+            $this->driver->addTable('test');
+        }
     }
 
     public function testAddDatabase()
@@ -41,6 +46,7 @@ class GoogleTest extends TestCase
     {
         $this->driver->setDatabase('test');
         $tables = $this->driver->getTables();
+        $this->assertTrue(count($tables) > 0);
     }
 
     public function testSet()

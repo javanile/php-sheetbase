@@ -10,6 +10,16 @@ use Javanile\Sheetbase\DriverInterface;
 class Google implements DriverInterface
 {
     /**
+     *
+     */
+    protected $client;
+
+    /**
+     *
+     */
+    protected $service;
+
+    /**
      * @var mixed|null
      */
 	private $databases = null;
@@ -24,17 +34,25 @@ class Google implements DriverInterface
      */
 	private $currentSpreadsheetId = null;
 
-
-	##
+    /**
+     * @var null
+     */
 	private $table = null;
-	
-	##	
-	private $worksheet = null;
+
+    /**
+     * @var null
+     */
+	private $sheet = null;
 
     /**
      * @var null
      */
 	private $sheets = null;
+
+    /**
+     * @var null
+     */
+    private $tables = null;
 
 	##
 	private $cell = null;
@@ -47,18 +65,18 @@ class Google implements DriverInterface
      */
     public function __construct($args)
     {
-		$this->gc = new \Google\Client();
+		$this->client = new \Google\Client();
 
 		if (isset($args['p12_file'])) {
 		    $this->authWithP12();
         } elseif (isset($args['json_file']) && file_exists($args['json_file'])) {
-            $this->gc->setAuthConfig($args['json_file']);
+            $this->client->setAuthConfig($args['json_file']);
         } else {
 		    throw new \Exception('Provide valid credentials');
         }
 
-        $this->gc->setApplicationName("Client_Library_Examples");
-        $this->gc->setScopes([
+        $this->client->setApplicationName("Client_Library_Examples");
+        $this->client->setScopes([
             'https://spreadsheets.google.com/feeds',
             "https://www.googleapis.com/auth/drive",
             "https://www.googleapis.com/auth/drive.file",
@@ -69,7 +87,7 @@ class Google implements DriverInterface
             "https://www.googleapis.com/auth/drive.metadata",
         ]);
 
-		$this->gss = new \Google\Service\Sheets($this->gc);
+		$this->service = new \Google\Service\Sheets($this->client);
 		$this->databases = $args['database'];
 	}
 
@@ -83,7 +101,7 @@ class Google implements DriverInterface
                 'title' => $database
             ]
         ]);
-        $spreadsheet = $this->gss->spreadsheets->create($spreadsheet, [
+        $spreadsheet = $this->service->spreadsheets->create($spreadsheet, [
             'fields' => 'spreadsheetId'
         ]);
     }
@@ -170,31 +188,14 @@ class Google implements DriverInterface
 			$rows = $rows ? $rows : 10;			
 		}
 
-        $response = $this->gss->spreadsheets->batchUpdate(
+        $response = $this->service->spreadsheets->batchUpdate(
             $this->currentSpreadsheetId,
             new \Google\Service\Sheets\BatchUpdateSpreadsheetRequest([
                 'requests' => [
-                    /*
-                    new \Google\Service\Sheets\Request([
-                        'updateSpreadsheetProperties' => [
-                            'properties' => [
-                                'title' => $title
-                            ],
-                            'fields' => 'title'
-                        ]
-                    ]),
-                    new \Google\Service\Sheets\Request([
-                        'findReplace' => [
-                            'find' => $find,
-                            'replacement' => $replacement,
-                            'allSheets' => true
-                        ]
-                    ])
-                    */
                     new \Google\Service\Sheets\Request([
                         "addSheet" => [
                             "properties" => [
-                                "title" => "Deposits",
+                                "title" => $table,
                                 "gridProperties" => [
                                     "rowCount" => 20,
                                     "columnCount" => 12
@@ -226,45 +227,50 @@ class Google implements DriverInterface
 
     /**
      * @param $name
-     * @return false
+     *
+     * @return boolean
+     *
+     * @throws \Exception
      */
 	public function hasTable($name)
     {
-		$this->requireSheets();
-		//return (boolean) $this->worksheets->getByTitle($name);
-        return false;
+        $this->requireTables();
+
+        return in_array($name, $this->tables);
 	}
 
-	##
-	public function setTable($table) {
-		
-		##
-		if ($table != $this->table) {
+    /**
+     * @param $table
+     * @return mixed|void
+     */
+	public function setTable($table)
+    {
+		if ($table == $this->table) {
+            return;
+		}
 
-			##
-			$this->table = $table;		
+		if (!$this->hasTable($table)) {
+            throw new \Exception("Table or Sheet with name '{$table}' not exists.");
+        }
 
-			##	
-			$this->worksheet = null;
-
-			##
-			$this->cell = null;
-
-			##
-			$this->list = null;			
-		} 		
+        $this->table = $table;
+        $this->sheet = null;
+        $this->cell = null;
+        $this->list = null;
  	}
 
     /**
      * @return mixed|void
+     *
+     * @throws \Exception
      */
 	public function getTables()
     {
 		$this->requireSheets();
 
 		$tables = array();
-		foreach($this->sheets as $sheet) {
-			$tables[] = strtolower($sheet->getTitle());
+		foreach ($this->sheets as $sheet) {
+			$tables[] = strtolower($sheet->getProperties()->getTitle());
 		}
 
 		return $tables;		
@@ -328,7 +334,7 @@ class Google implements DriverInterface
 			$cell = null;
 
 			##
-			for($row=2; $row<=$this->currentTable->getRowCount(); $row++) {
+			for ($row=2; $row<=$this->currentTable->getRowCount(); $row++) {
 
 				##
 				$cell = $this->currentCell->getCell($row,$col);
@@ -384,19 +390,26 @@ class Google implements DriverInterface
 
     /**
      * @param $row
+     * @throws \Exception
      */
 	public function insert($row)
     {
-        $this->requireDatabase();
-		//$this->requireList();
-        $range = 'principale!A1:E1';  // TODO: Update placeholder value.
-        $requestBody = new \Google\Service\Sheets\ValueRange();
+        $this->requireSheet();
 
-        $response = $this->gss->spreadsheets_values->append($this->currentSpreadsheetId, $range, $requestBody, [
+        $sheetTitle = $this->sheet->getProperties()->getTitle();
+
+        $range = $sheetTitle.'!A:A';
+        $requestBody = new \Google\Service\Sheets\ValueRange([
+            'values' => [
+                $row
+            ]
+        ]);
+
+        $response = $this->service->spreadsheets_values->append($this->currentSpreadsheetId, $range, $requestBody, [
             'valueInputOption' => 'RAW'
         ]);
 
-        echo '<pre>', var_export($response, true), '</pre>', "\n";
+        //echo '<pre>', var_export($response, true), '</pre>', "\n";
 	}
 		
 	##
@@ -488,33 +501,55 @@ class Google implements DriverInterface
 	}
 	
 	##
-	public function requireSheets()
+
+    /**
+     * @throws \Exception
+     */
+    protected function requireSheets()
     {
-	
-		##
-		$this->requireSpreadsheet();
-		    	
-		##
+		$this->requireDatabase();
+
 		$this->sheets = $this->getSheets();
 	}
+
+
+    /**
+     *
+     * @throws \Exception
+     */
+	protected function requireTables()
+    {
+        if ($this->tables !== null) {
+            return;
+        }
+
+        $tables = [];
+        $this->requireSheets();
+        foreach ($this->sheets as $sheet) {
+            $tables[] = strtolower($sheet->getProperties()->getTitle());
+        }
+
+        $this->tables = $tables;
+    }
 
     /**
      *
      */
 	protected function getSheets()
     {
-        $response = $this->gss->spreadsheets->get($this->currentSpreadsheetId);
+        $response = $this->service->spreadsheets->get($this->currentSpreadsheetId);
 
         return $response->sheets;
     }
 
     /**
      *
+     * @throws \Exception
      */
 	public function requireSpreadsheet()
     {
 		$this->requireDatabase();
-		$this->spreadsheet = $this->gss->spreadsheets->get($this->databaseid);
+		$this->spreadsheet = $this->service->spreadsheets->get($this->currentSpreadsheetId);
 	}
 		
 	##
@@ -540,17 +575,32 @@ class Google implements DriverInterface
 		}			
 	}
 
-	##
-	public function requireTable() {
-		
-		##
+    /**
+     * @throws \Exception
+     */
+	protected function requireTable()
+    {
 		$this->requireDatabase();
-		
-		##
-		if (!$this->table) {
+		if (empty($this->table)) {
 			throw new Exception("GoogleDB-DRIVE require table: use setTable(.)");
 		}			
 	}
 
+    /**
+     * @throws \Exception
+     */
+    protected function requireSheet()
+    {
+        if ($this->sheet !== null) {
+            return;
+        }
 
+        $this->requireTable();
+        $this->requireSheets();
+        foreach ($this->sheets as $sheet) {
+            if ($this->table == strtolower($sheet->getProperties()->getTitle())) {
+                $this->sheet = $sheet;
+            }
+        }
+    }
 }
