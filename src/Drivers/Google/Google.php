@@ -419,15 +419,17 @@ class Google implements DriverInterface
 
     /**
      * @return array
+     *
+     * @throws \Exception
      */
 	public function all()
     {
         $this->requireSheetTitle();
 
-        $range = $this->sheetTitle.'!A1:Z10';
+        $range = $this->sheetTitle;
         $response = $this->service->spreadsheets_values->get($this->currentSpreadsheetId, $range);
 
-        //echo '<pre>', var_export($response, true), '</pre>', "\n";
+        //echo '<pre>', var_export($response->values, true), '</pre>', "\n";
 
         return $response->values;
 	}

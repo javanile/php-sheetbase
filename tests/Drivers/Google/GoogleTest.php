@@ -27,20 +27,30 @@ class GoogleTest extends TestCase
     public function testAddDatabase()
     {}
 
-    public function testSetDatabase($database)
-    {}
+    public function testSetDatabase()
+    {
 
-    public function testHasDatabase($name)
-    {}
+    }
+
+    public function testHasDatabase()
+    {
+
+    }
 
     public function testAddTable()
-    {}
+    {
+
+    }
 
     public function testHasTable()
-    {}
+    {
+
+    }
 
     public function testSetTable()
-    {}
+    {
+
+    }
 
     public function testGetTables()
     {
@@ -50,16 +60,24 @@ class GoogleTest extends TestCase
     }
 
     public function testSet()
-    {}
+    {
+
+    }
 
     public function testGet()
-    {}
+    {
+
+    }
 
     public function testSearch()
-    {}
+    {
+
+    }
 
     public function testColumn()
-    {}
+    {
+
+    }
 
     public function testInsert()
     {
