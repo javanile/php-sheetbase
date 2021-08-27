@@ -20,10 +20,10 @@ class DatabaseTest extends TestCase
             'cache' => false,
         ]);
 
-        $db->addDatabase('new-database');
+        #$db->addDatabase('new-database');
 
-        #$db->setDatabase('test');
-        #$db->addTable('test');
+        $db->setDatabase('test');
+        $db->addTable('test');
 
         //$this->assertEquals($message, $mysqlImport->run());
         //$this->assertEquals(2, $mysqlImport->getExitCode());

@@ -1,11 +1,11 @@
 <?php
 
-namespace Javanile\Sheetbase;
+namespace Javanile\Sheetbase\Providers;
 
 /**
  *
  */
-class Drive
+class Google
 {
 	##
 	private $databases = null;
@@ -26,7 +26,7 @@ class Drive
 	private $worksheets = null;
 	
 	##
-	private $spreadsheet = null;
+	private $currentSpreadsheetId = null;
 		
 	##
 	private $cell = null;
@@ -149,8 +149,6 @@ class Drive
      */
 	public function addTable($table, $cols = 10, $rows = null)
     {
-        var_dump($table);
-		##
 		if ($this->hasTable($table)) {
 			throw new Exception('Table already exists: "'.$table.'"');						
 		}
@@ -158,10 +156,7 @@ class Drive
 		##
 		$this->requireSpreadsheet();
 				
-		##
-		$fields = array(); 
-			
-		##
+		$fields = array();
 		if (is_array($cols)) {
 			foreach($cols as $col) {
 				$fields[] = strtolower($col);
@@ -171,30 +166,70 @@ class Drive
 		} else {
 			$rows = $rows ? $rows : 10;			
 		}
-				
-		##
-		$worksheet = $this->spreadsheet->addWorksheet($table,$rows,$cols);
 
-		##
+        $response = $this->gss->spreadsheets->batchUpdate(
+            $this->currentSpreadsheetId,
+            new \Google\Service\Sheets\BatchUpdateSpreadsheetRequest([
+                'requests' => [
+                    /*
+                    new \Google\Service\Sheets\Request([
+                        'updateSpreadsheetProperties' => [
+                            'properties' => [
+                                'title' => $title
+                            ],
+                            'fields' => 'title'
+                        ]
+                    ]),
+                    new \Google\Service\Sheets\Request([
+                        'findReplace' => [
+                            'find' => $find,
+                            'replacement' => $replacement,
+                            'allSheets' => true
+                        ]
+                    ])
+                    */
+                    new \Google\Service\Sheets\Request([
+                        "addSheet" => [
+                            "properties" => [
+                                "title" => "Deposits",
+                                "gridProperties" => [
+                                    "rowCount" => 20,
+                                    "columnCount" => 12
+                                ],
+                                "tabColor" => [
+                                    "red" => 1.0,
+                                    "green" => 0.3,
+                                    "blue" => 0.4
+                                ]
+                            ]
+                        ]
+                    ])
+                ]
+            ]
+        ));
+
+		/*
 		if (count($fields)>0) {
 			$feed = $worksheet->getCellFeed();
 			foreach($fields as $c=>$field) {
-				$feed->editCell(1,$c+1,$field);				
+				$feed->editCell(1, $c+1,$field);
 			} 			
 		}
-			
+		*/
+
 		##
 		$this->worksheets = null;			
 	}
 
-	##
-	public function hasTable($name) {	
-		
-		##
+    /**
+     * @param $name
+     * @return false
+     */
+	public function hasTable($name)
+    {
 		$this->requireWorksheets();
-		
-		##
-		return (boolean) $this->worksheets->getByTitle($name);
+		//return (boolean) $this->worksheets->getByTitle($name);
+        return false;
 	}
 
 	##
@@ -451,7 +486,7 @@ class Drive
 		$this->requireSpreadsheet();
 		    	
 		##
-		$this->worksheets = $this->spreadsheet->getWorksheets();	
+		// $this->worksheets = $this->spreadsheet->getWorksheets();
 	}
 
     /**
