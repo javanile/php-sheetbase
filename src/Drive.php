@@ -35,61 +35,53 @@ class Drive
 	private $list = null;
 
 	##
-	public function __construct($args) {
-				
-		##
-		$this->gc = new Google_Client();
-		
-		##
-		$this->gc->setApplicationName("Client_Library_Examples");
-		
-		##
-		$key = file_get_contents($args['p12']);
-		 
-		##
-		$gac = new Google_Auth_AssertionCredentials(
-			$args['emailapp'], 
-			array(
-				'https://spreadsheets.google.com/feeds',
-				"https://www.googleapis.com/auth/drive",            	
-				"https://www.googleapis.com/auth/drive.file",
-				"https://www.googleapis.com/auth/drive.readonly",
-				"https://www.googleapis.com/auth/drive.metadata.readonly",
-				"https://www.googleapis.com/auth/drive.appdata",
-				"https://www.googleapis.com/auth/drive.apps.readonly",
-            	"https://www.googleapis.com/auth/drive.metadata",           
-			),
-			$key
-		);
 
-		##
-		$this->gc->setAssertionCredentials($gac);
-		
-		##
-		if ($this->gc->getAuth()->isAccessTokenExpired()) {
-			$this->gc->getAuth()->refreshTokenWithAssertion($gac);
-		}
-		
-		##
-		$at = json_decode($this->gc->getAuth()->getAccessToken());
-		
-    
-		##
-		$serviceRequest = new Google\Spreadsheet\DefaultServiceRequest($at->access_token);
-		
-    
-		##
-		Google\Spreadsheet\ServiceRequestFactory::setInstance($serviceRequest);		
-			
-		## Google Spreadsheet Service uset to retrieve list of 
-		$this->gss = new Google\Spreadsheet\SpreadsheetService();
-	
-    
-		##
+    /**
+     * @throws \Exception
+     */
+    public function __construct($args)
+    {
+		$this->gc = new \Google\Client();
+
+		if (isset($args['p12_file'])) {
+		    $this->authWithP12();
+        } elseif (isset($args['json_file']) && file_exists($args['json_file'])) {
+            $this->gc->setAuthConfig($args['json_file']);
+        } else {
+		    throw new \Exception('Provide valid credentials');
+        }
+
+        $this->gc->setApplicationName("Client_Library_Examples");
+        $this->gc->setScopes([
+            'https://spreadsheets.google.com/feeds',
+            "https://www.googleapis.com/auth/drive",
+            "https://www.googleapis.com/auth/drive.file",
+            "https://www.googleapis.com/auth/drive.readonly",
+            "https://www.googleapis.com/auth/drive.metadata.readonly",
+            "https://www.googleapis.com/auth/drive.appdata",
+            "https://www.googleapis.com/auth/drive.apps.readonly",
+            "https://www.googleapis.com/auth/drive.metadata",
+        ]);
+
+		$this->gss = new \Google\Service\Sheets($this->gc);
 		$this->databases = $args['database'];
-		
 	}
-			
+
+    /**
+     * @param $database
+     */
+    public function addDatabase($database)
+    {
+        $spreadsheet = new \Google\Service\Sheets\Spreadsheet([
+            'properties' => [
+                'title' => $database
+            ]
+        ]);
+        $spreadsheet = $this->gss->spreadsheets->create($spreadsheet, [
+            'fields' => 'spreadsheetId'
+        ]);
+    }
+
 	##
 	public function setDatabase($database) {
 	
@@ -149,10 +141,15 @@ class Drive
 			}			
 		}		
 	}
-	
-	##
-	public function addTable($table,$cols=10,$rows=null) {				
-		
+
+    /**
+     * @param $table
+     * @param int $cols
+     * @param null $rows
+     */
+	public function addTable($table, $cols = 10, $rows = null)
+    {
+        var_dump($table);
 		##
 		if ($this->hasTable($table)) {
 			throw new Exception('Table already exists: "'.$table.'"');						
@@ -456,15 +453,14 @@ class Drive
 		##
 		$this->worksheets = $this->spreadsheet->getWorksheets();	
 	}
-	
-	##
-	public function requireSpreadsheet() {
 
-		##
+    /**
+     *
+     */
+	public function requireSpreadsheet()
+    {
 		$this->requireDatabase();
-		
-		##    	
-		$this->spreadsheet = $this->gss->getSpreadsheetById($this->databaseid);		    	
+		$this->spreadsheet = $this->gss->spreadsheets->get($this->databaseid);
 	}
 		
 	##
@@ -499,5 +495,45 @@ class Drive
 			throw new Exception("GoogleDB-DRIVE require table: use setTable(.)");
 		}			
 	}
-	
+
+	protected function authWithP12()
+    {
+
+        ##
+        $key = file_get_contents($args['p12']);
+
+        ##
+        $gac = new Google_Auth_AssertionCredentials(
+            $args['emailapp'],
+            array(
+                'https://spreadsheets.google.com/feeds',
+                "https://www.googleapis.com/auth/drive",
+                "https://www.googleapis.com/auth/drive.file",
+                "https://www.googleapis.com/auth/drive.readonly",
+                "https://www.googleapis.com/auth/drive.metadata.readonly",
+                "https://www.googleapis.com/auth/drive.appdata",
+                "https://www.googleapis.com/auth/drive.apps.readonly",
+                "https://www.googleapis.com/auth/drive.metadata",
+            ),
+            $key
+        );
+
+        ##
+        $this->gc->setAssertionCredentials($gac);
+
+        ##
+        if ($this->gc->getAuth()->isAccessTokenExpired()) {
+            $this->gc->getAuth()->refreshTokenWithAssertion($gac);
+        }
+
+        ##
+        $at = json_decode($this->gc->getAuth()->getAccessToken());
+
+
+        ##
+        $serviceRequest = new Google\Spreadsheet\DefaultServiceRequest($at->access_token);
+        ##
+        Google\Spreadsheet\ServiceRequestFactory::setInstance($serviceRequest);
+
+    }
 }

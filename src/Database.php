@@ -59,11 +59,21 @@ class Database
 
 		return static::$instance;
 	}
-	
-	##
-	public function setDatabase($database) {
-				
-		##
+
+    /**
+     *
+     */
+	public function addDatabase($database)
+    {
+        return $this->point->addDatabase($database);
+    }
+
+    /**
+     * @param $database
+     * @return mixed
+     */
+	public function setDatabase($database)
+    {
 		return $this->point->setDatabase($database);
 	}
 	
@@ -80,12 +90,16 @@ class Database
 		##
 		return $this->point->setTable($table);
 	}
-	
-	##
-	public function addTable($table,$cols=10,$rows=null) {
-				
-		##
-		return $this->point->addTable($table,$cols,$rows);
+
+    /**
+     * @param $table
+     * @param int $cols
+     * @param null $rows
+     * @return mixed
+     */
+	public function addTable($table, $cols = 10, $rows = null)
+    {
+		return $this->point->addTable($table, $cols, $rows);
 	}
 
 	##

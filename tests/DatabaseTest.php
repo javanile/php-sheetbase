@@ -7,12 +7,11 @@ use PHPUnit\Framework\TestCase;
 
 class DatabaseTest extends TestCase
 {
-    public function testConnect()
+    public function testGoogleJsonConnect()
     {
         $db = new Database([
-            'client_id' => getenv('GOOGLE_CLIENT_ID'),
-            'email_app' => getenv('GOOGLE_EMAIL_APP'),
-            'p12_file' => getenv('GOOGLE_P12_FILE'),
+            'provider' => 'google',
+            'json_file' => getenv('GOOGLE_AUTH_JSON_FILE'),
 
             'database' => [
                 'test' => getenv('GOOGLE_DATABASE'),
@@ -20,6 +19,11 @@ class DatabaseTest extends TestCase
 
             'cache' => false,
         ]);
+
+        $db->addDatabase('new-database');
+
+        #$db->setDatabase('test');
+        #$db->addTable('test');
 
         //$this->assertEquals($message, $mysqlImport->run());
         //$this->assertEquals(2, $mysqlImport->getExitCode());

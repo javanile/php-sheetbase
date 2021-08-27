@@ -51,17 +51,15 @@ class Cache
 	
 	##
 	private $drive = null;
-	
-	##
-	public function __construct($args,&$drive) {
-						
-		##
+
+    /**
+     * @param $args
+     * @param $drive
+     */
+	public function __construct($args,&$drive)
+    {
 		$this->databases = $args['database'];
-		
-		##
 		$this->cache = __DIR__.'/cache';
-		
-		##
 		$this->drive = $drive;
 	}
 

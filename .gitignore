@@ -1,3 +1,4 @@
 /vendor/
 .env
 *.p12
+*-auth.json
