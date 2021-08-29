@@ -6,6 +6,15 @@ install:
 require-google-apiclient:
 	@docker-compose run --rm composer require google/apiclient:^2.10
 
+dist:
+	@docker-compose run --rm dist
+
+## ====
+## Test
+## ====
+test:
+	@docker-compose run --rm phpunit tests
+
 test-database-google-json-connect:
 	@docker-compose run --rm phpunit tests --filter DatabaseTest::testGoogleJsonConnect
 
@@ -26,6 +35,12 @@ test-driver-google-get-tables:
 
 test-driver-google-insert:
 	@docker-compose run --rm phpunit tests --filter GoogleTest::testInsert
+
+test-driver-google-search:
+	@docker-compose run --rm phpunit tests --filter GoogleTest::testSearch
+
+test-driver-google-column:
+	@docker-compose run --rm phpunit tests --filter GoogleTest::testColumn
 
 test-driver-google-all:
 	@docker-compose run --rm phpunit tests --filter GoogleTest::testAll

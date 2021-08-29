@@ -15,6 +15,11 @@ services:
     entrypoint: ['./vendor/bin/phpunit']
     env_file: ['.env']
 
+  dist:
+    extends: { service: php }
+    entrypoint: ['curl', '-fsSL', 'git.io/dist.sh']
+    env_file: ['.env']
+
 volumes:
   mysql:
 

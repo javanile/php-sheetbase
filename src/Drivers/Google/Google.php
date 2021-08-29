@@ -158,7 +158,7 @@ class Google implements DriverInterface
      */
 	public function getSpreadsheetId($name)
     {
-		return $this->databases[$name];		
+		return $this->databases[$name];
 	}
 
     /**
@@ -170,8 +170,8 @@ class Google implements DriverInterface
 		foreach ($this->databases as $database => $id) {
 			if ($id == $spreadsheetId) {
 				return $database;
-			}			
-		}		
+			}
+		}
 	}
 
     /**
@@ -188,16 +188,16 @@ class Google implements DriverInterface
 		}
 
 		$this->requireSpreadsheet();
-				
+
 		$fields = array();
 		if (is_array($cols)) {
 			foreach($cols as $col) {
 				$fields[] = strtolower($col);
-			}		
-			$cols = count($fields);			
+			}
+			$cols = count($fields);
 			$rows = $rows ? $rows : 1;
 		} else {
-			$rows = $rows ? $rows : 10;			
+			$rows = $rows ? $rows : 10;
 		}
 
         $response = $this->service->spreadsheets->batchUpdate(
@@ -229,7 +229,7 @@ class Google implements DriverInterface
 			$feed = $worksheet->getCellFeed();
 			foreach($fields as $c=>$field) {
 				$feed->editCell(1, $c+1,$field);
-			} 			
+			}
 		}
 		*/
 
@@ -285,7 +285,7 @@ class Google implements DriverInterface
 			$tables[] = strtolower($sheet->getProperties()->getTitle());
 		}
 
-		return $tables;		
+		return $tables;
 	}
 
     /**
@@ -328,91 +328,81 @@ class Google implements DriverInterface
 
         return $response->values[0][0];
 	}
-		
-	##
-	public function search($query,$col=1)
+
+    /**
+     * @param $query
+     * @param int $col
+     * @return int|mixed
+     */
+	public function search($query, $col = 1)
     {
-		
-		if (is_array($query)||is_object($query)) {
-			
-			$this->requireCell();
-			
-			for($row=2; $row<=$this->worksheet->getRowCount(); $row++) {
-				$exit = true;
-				foreach($query as $key=>$value) {
-					
-					
-					
-				}			
-				if ($exit) {
-					return $row;
-				}
-			}
-			
-		} else {
-		
-			##
-			$value = $query;
-			
-			##
-			$this->requireCurrentCell();
+		if (is_array($query) || is_object($query)) {
+            return $this->searchByQuery($query, $col = 1);
+        }
 
-			##
-			$cell = null;
+        $this->requireSheetTitle();
+		$columnLetter = self::columnLetter($col);
+        $range = '\''.$this->sheetTitle.'\'!'.$columnLetter.'2:'.$columnLetter;
+        $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
 
-			##
-			for ($row=2; $row<=$this->currentTable->getRowCount(); $row++) {
+        echo '<pre>', var_export($response->values, true), '</pre>', "\n";
 
-				##
-				$cell = $this->currentCell->getCell($row,$col);
+        return $response->values[0][0];
 
-				##
-				if ($cell) {
-					if ($cell->getContent() == $value) {
-						return $row;
-					}				
-				} else if (!$value) {
-					return $row;
-				}			
-			}
-
-			##
-			return 0;			
-		}		
 	}
-	
+
+	protected function searchByQuery($query, $col = 1)
+    {
+        $this->requireCell();
+
+        for($row=2; $row<=$this->worksheet->getRowCount(); $row++) {
+            $exit = true;
+            foreach($query as $key=>$value) {
+
+
+
+            }
+            if ($exit) {
+                return $row;
+            }
+        }
+
+
+    }
+
 	##
-	public function column($column,$searchColumn=0,$searchValue="") {
-		
+	public function column($column, $searchColumn=0, $searchValue = "")
+    {
+
 		##
 		$this->requireCell();
 		$this->requireWorksheet();
-			
+
 		##
 		$data = array();
-		
+
 		##
 		$rowCount = $this->getRowCount();
-				
+
 		##
-		for($row=2; $row<=$rowCount; $row++) {		
-			
+		for ($row=2; $row<=$rowCount; $row++) {
+
 			##
 			$cell = $this->get($row,$column);
-							
+
 			if ($searchColumn > 0) {
 				$searchCell = $this->get($row, $searchColumn);
 				if ($searchCell == $searchValue) {
-					$data[$row] = $cell; 																				
+					$data[$row] = $cell;
 				}
 			} else {
-				$data[$row] = $cell; 															
+				$data[$row] = $cell;
 			}
-					
+
 		}
-		
+
 		##
-		return $data;				
+		return $data;
 	}
 
     /**
@@ -455,22 +445,22 @@ class Google implements DriverInterface
 
         return $response->values;
 	}
-	
+
 	##
 	public function getTranskey() {
-		
+
 		##
 		$transkey = array();
-		
+
 		##
 		for($i=1; $i<=$this->getColCount(); $i++) {
 			$val = $this->get(1,$i);
 			$key = $val ? $val : $i;
 			$transkey[$key] = $i;
 		}
-		
+
 		##
-		return $transkey;	
+		return $transkey;
 	}
 
     /**
@@ -492,31 +482,31 @@ class Google implements DriverInterface
 
         return (int) $this->sheet->getProperties()->getGridProperties()->columnCount;
 	}
-	
+
 	##
 	public function requireCell() {
-		
+
 		##
 		$this->requireWorksheet();
-				
+
 		##
 		if (!$this->cell) {
-			$this->cell = $this->worksheet->getCellFeed();			
-		}		
-	}
-		
-	##
-	public function requireWorksheet() {
-		
-		##		
-		$this->requireWorksheets();
-
-		##		
-		if (!$this->worksheet) {
-			$this->worksheet = $this->worksheets->getByTitle($this->table);	
+			$this->cell = $this->worksheet->getCellFeed();
 		}
 	}
-	
+
+	##
+	public function requireWorksheet() {
+
+		##
+		$this->requireWorksheets();
+
+		##
+		if (!$this->worksheet) {
+			$this->worksheet = $this->worksheets->getByTitle($this->table);
+		}
+	}
+
 	##
 
     /**
@@ -568,13 +558,13 @@ class Google implements DriverInterface
 		$this->requireDatabase();
 		$this->spreadsheet = $this->service->spreadsheets->get($this->spreadsheetId);
 	}
-		
+
 	##
 	public function requireList() {
-		
+
 		##
 		$this->requireWorksheet();
-		
+
 		##
 		if (!$this->list) {
 			$this->list = $this->worksheet->getListFeed();
@@ -589,7 +579,7 @@ class Google implements DriverInterface
     {
 		if (empty($this->database)) {
 			throw new \Exception("GoogleDB-DRIVE require database: use setDatabase(.)");
-		}			
+		}
 	}
 
     /**
@@ -600,7 +590,7 @@ class Google implements DriverInterface
 		$this->requireDatabase();
 		if (empty($this->table)) {
 			throw new Exception("GoogleDB-DRIVE require table: use setTable(.)");
-		}			
+		}
 	}
 
     /**
@@ -632,5 +622,26 @@ class Google implements DriverInterface
 
         $this->requireSheet();
         $this->sheetTitle = $this->sheet->getProperties()->getTitle();
+    }
+
+    /**
+     * @param $col
+     * @return string
+     */
+    protected static function columnLetter($col)
+    {
+        $col = intval($col);
+        if ($col <= 0) {
+            return '';
+        }
+
+        $letter = '';
+        while ($col != 0) {
+            $p = ($col - 1) % 26;
+            $col = intval(($col - $p) / 26);
+            $letter = chr(65 + $p) . $letter;
+        }
+
+        return $letter;
     }
 }

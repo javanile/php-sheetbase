@@ -120,12 +120,27 @@ class GoogleTest extends TestCase
 
     public function testSearch()
     {
-
+        $this->driver->setDatabase('test');
+        $this->driver->setTable('test');
+        $newValues = [];
+        for ($i = 1; $i <= 10; $i++) {
+            $newValue = 'value-'.rand(0, 10000);
+            $newValues[] = $newValue;
+            $this->set($i, 1, $newValue);
+        }
+        $this->driver->search($newValues[3]);
     }
 
     public function testColumn()
     {
-
+        $this->driver->setDatabase('test');
+        $this->driver->setTable('test');
+        $newValues = [];
+        for ($i = 1; $i <= 10; $i++) {
+            $newValue = 'value-'.rand(0, 10000);
+            $newValues[] = $newValue;
+            $this->set($i, 1, $newValue);
+        }
     }
 
     public function testInsert()
