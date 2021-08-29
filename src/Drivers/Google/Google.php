@@ -345,10 +345,12 @@ class Google implements DriverInterface
         $range = '\''.$this->sheetTitle.'\'!'.$columnLetter.'2:'.$columnLetter;
         $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
 
-        echo '<pre>', var_export($response->values, true), '</pre>', "\n";
-
-        return $response->values[0][0];
-
+        //echo '<pre>', var_export($response->values, true), '</pre>', "\n";
+        foreach ($response->values as $rowIndex => $row) {
+            if ($query == $row[0]) {
+                return $this->getRow();
+            }
+        }
 	}
 
 	protected function searchByQuery($query, $col = 1)
@@ -370,10 +372,11 @@ class Google implements DriverInterface
 
     }
 
-	##
-	public function column($column, $searchColumn=0, $searchValue = "")
+	/**
+     *
+     */
+	public function column($column, $searchColumn = null, $searchValue = null)
     {
-
 		##
 		$this->requireCell();
 		$this->requireWorksheet();
@@ -462,6 +465,20 @@ class Google implements DriverInterface
 		##
 		return $transkey;
 	}
+
+    /**
+     * @param $query
+     * @param int $col
+     * @return int|mixed
+     */
+    public function getRow($row)
+    {
+        $this->requireSheetTitle();
+        $range = '\''.$this->sheetTitle.'\'!'.$row.':'.$row;
+        $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
+
+        return $response->values[0];
+    }
 
     /**
      * @return int
