@@ -17,7 +17,7 @@ services:
 
   dist:
     extends: { service: php }
-    entrypoint: ['curl', '-fsSL', 'git.io/dist.sh']
+    entrypoint: ['dist.sh']
     env_file: ['.env']
 
 volumes:

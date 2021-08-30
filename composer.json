@@ -29,5 +29,13 @@
   },
   "require": {
     "google/apiclient": "^2.10"
+  },
+  "scripts": {
+    "pre-autoload-dump": "Google\\Task\\Composer::cleanup"
+  },
+  "extra": {
+    "google/apiclient-services": [
+      "Sheets"
+    ]
   }
 }

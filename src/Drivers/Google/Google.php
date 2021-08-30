@@ -353,6 +353,9 @@ class Google implements DriverInterface
         }
 	}
 
+    /**
+     *
+     */
 	protected function searchByQuery($query, $col = 1)
     {
         $this->requireCell();
@@ -360,16 +363,11 @@ class Google implements DriverInterface
         for($row=2; $row<=$this->worksheet->getRowCount(); $row++) {
             $exit = true;
             foreach($query as $key=>$value) {
-
-
-
             }
             if ($exit) {
                 return $row;
             }
         }
-
-
     }
 
 	/**
@@ -377,22 +375,16 @@ class Google implements DriverInterface
      */
 	public function column($column, $searchColumn = null, $searchValue = null)
     {
-		##
+        if ($searchColumn === null) {
+            return $this->getColumn($column);
+        }
+
 		$this->requireCell();
 		$this->requireWorksheet();
-
-		##
-		$data = array();
-
-		##
-		$rowCount = $this->getRowCount();
-
-		##
-		for ($row=2; $row<=$rowCount; $row++) {
-
-			##
-			$cell = $this->get($row,$column);
-
+    	$data = array();
+    	$rowCount = $this->getRowCount();
+    	for ($row=2; $row<=$rowCount; $row++) {
+    		$cell = $this->get($row,$column);
 			if ($searchColumn > 0) {
 				$searchCell = $this->get($row, $searchColumn);
 				if ($searchCell == $searchValue) {
@@ -401,10 +393,8 @@ class Google implements DriverInterface
 			} else {
 				$data[$row] = $cell;
 			}
-
 		}
 
-		##
 		return $data;
 	}
 

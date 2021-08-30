@@ -1,5 +1,7 @@
 #!make
 
+.PHONY: dist
+
 install:
 	@docker-compose run --rm composer install
 
@@ -7,7 +9,9 @@ require-google-apiclient:
 	@docker-compose run --rm composer require google/apiclient:^2.10
 
 dist:
+	@sudo mkdir -p dist
 	@docker-compose run --rm dist
+	@sudo chmod 777 -R dist
 
 ## ====
 ## Test

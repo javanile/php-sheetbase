@@ -141,7 +141,7 @@ class GoogleTest extends TestCase
         for ($i = 1; $i <= 10; $i++) {
             $newValue = 'value-'.rand(0, 10000);
             $newValues[] = $newValue;
-            $this->set($i, 1, $newValue);
+            $this->driver->set($i, 1, $newValue);
         }
     }
 

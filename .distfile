@@ -1,12 +1,13 @@
 
+@dist/Sheetbase.zip
 
-@Sheetbase.zip
-
+&mkdir -p Sheetbase
 >Sheetbase
 
-##
-&[ -d vendor ] && mv vendor vendor.bak
-&[ -f composer.lock ] && mv composer.lock composer.lock.bak
-&composer install --no-ansi --no-dev --no-interaction --no-progress --no-scripts --optimize-autoloader
-&[ -f composer.lock.bak ] && mv composer.lock.bak composer.lock
-&[ -d vendor.bak ] && mv vendor.bak vendor
+## copy source
+src
+composer.json
+
+## install dependencies
+&composer install --no-ansi --no-dev --no-interaction --no-progress --optimize-autoloader
++vendor
