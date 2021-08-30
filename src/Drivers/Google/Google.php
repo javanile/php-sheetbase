@@ -302,6 +302,11 @@ class Google implements DriverInterface
      */
 	public function set($row, $col, $value)
     {
+        if (!$this->zeroBased) {
+            $row = $row - 1;
+            $col = $col - 1;
+        }
+
         $this->requireSheetTitle();
         $range = '\''.$this->sheetTitle.'\'!R['.$row.']C['.$col.']';
         $requestBody = new \Google\Service\Sheets\ValueRange(['values' => [[$value]]]);
@@ -325,6 +330,11 @@ class Google implements DriverInterface
      */
 	public function get($row, $col)
     {
+        if (!$this->zeroBased) {
+            $row = $row - 1;
+            $col = $col - 1;
+        }
+
         $this->requireSheetTitle();
 
         $range = '\''.$this->sheetTitle.'\'!R['.$row.']C['.$col.']';

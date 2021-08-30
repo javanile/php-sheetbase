@@ -107,7 +107,7 @@ class GoogleTest extends TestCase
     {
         $this->driver->setDatabase('test');
         $this->driver->setTable('test');
-        $this->assertEquals(1, $this->driver->set(0, 0, 'Hello World!'));
+        $this->assertEquals(1, $this->driver->set(1, 1, 'Hello World!'));
     }
 
     public function testGet()
@@ -115,8 +115,8 @@ class GoogleTest extends TestCase
         $newValue = 'value-'.time();
         $this->driver->setDatabase('test');
         $this->driver->setTable('test');
-        $this->assertEquals(1, $this->driver->set(0, 0, $newValue));
-        $this->assertEquals($newValue, $this->driver->get(0, 0));
+        $this->assertEquals(1, $this->driver->set(1, 1, $newValue));
+        $this->assertEquals($newValue, $this->driver->get(1, 1));
     }
 
     public function testSearch()
