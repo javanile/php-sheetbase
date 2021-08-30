@@ -23,7 +23,9 @@ class DatabaseTest extends TestCase
         #$db->addDatabase('new-database');
 
         $db->setDatabase('test');
-        $db->addTable('test');
+        if (!$db->hasTable('test')) {
+            $db->addTable('test');
+        }
 
         //$this->assertEquals($message, $mysqlImport->run());
         //$this->assertEquals(2, $mysqlImport->getExitCode());

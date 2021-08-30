@@ -17,6 +17,7 @@ class GoogleTest extends TestCase
                 'test' => getenv('GOOGLE_DATABASE')
             ],
             'cache' => false,
+            'zero_based' => false,
         ]);
 
         $this->driver->setDatabase('test');
@@ -159,11 +160,17 @@ class GoogleTest extends TestCase
         $data = $this->driver->all();
 
         $this->assertTrue(is_array($data));
-        foreach ($data as $row) {
+        $rowIndex = 1;
+        foreach ($data as $index => $row) {
+            $this->assertEquals($rowIndex, $index);
             $this->assertTrue(is_array($row));
-            foreach ($row as $cell) {
+            $colIndex = 1;
+            foreach ($row as $index => $cell) {
+                $this->assertEquals($colIndex, $index);
                 $this->assertFalse(is_array($cell));
+                $colIndex++;
             }
+            $rowIndex++;
         }
     }
 

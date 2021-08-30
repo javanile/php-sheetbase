@@ -37,8 +37,8 @@ class Database implements DriverInterface
      */
 	public function __construct($args)
     {
-		$this->drive = new Drive($args);
-		$this->cache = new Cache($args, $this->drive);
+		$this->drive = new Drivers\Google\Google($args);
+		//$this->cache = new Cache($args, $this->drive);
         $this->useCache = isset($args['cache']) ? $args['cache'] : $this->useCache;
 
 		if ($this->useCache) {
@@ -109,7 +109,14 @@ class Database implements DriverInterface
 		return $this->point->hasTable($table);
 	}
 
-	##
+    ##
+    public function getTables() {
+
+        ##
+        return $this->point->getTables();
+    }
+
+    ##
 	public function set($row, $col, $value) {
 	
 		##

@@ -65,6 +65,11 @@ class Google implements DriverInterface
     protected $tables = null;
 
     /**
+     * @var null
+     */
+    protected $zeroBased = null;
+
+    /**
      * @throws \Exception
      */
     public function __construct($args)
@@ -93,6 +98,7 @@ class Google implements DriverInterface
 
 		$this->service = new \Google\Service\Sheets($this->client);
 		$this->databases = $args['database'];
+        $this->zeroBased = isset($args['zero_based']) ? boolval($args['zero_based']) : true;
 	}
 
     /**
@@ -436,7 +442,7 @@ class Google implements DriverInterface
 
         //echo '<pre>', var_export($response->values, true), '</pre>', "\n";
 
-        return $response->values;
+        return $this->zeroBased ? $response->values : self::transformMatrixToOneBased($response->values);
 	}
 
 	##
@@ -650,5 +656,35 @@ class Google implements DriverInterface
         }
 
         return $letter;
+    }
+
+    /**
+     * @param $values
+     */
+    protected static function transformMatrixToOneBased($values)
+    {
+        $index = 1;
+        $newValues = [];
+        foreach ($values as $row) {
+            $newValues[$index] = self::transformArrayToOneBased($row);
+            $index++;
+        }
+
+        return $newValues;
+    }
+
+    /**
+     * @param $values
+     */
+    protected static function transformArrayToOneBased($values)
+    {
+        $index = 1;
+        $newValues = [];
+        foreach ($values as $value) {
+            $newValues[$index] = $value;
+            $index++;
+        }
+
+        return $newValues;
     }
 }
