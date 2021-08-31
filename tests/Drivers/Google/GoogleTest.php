@@ -150,7 +150,11 @@ class GoogleTest extends TestCase
     {
         $this->driver->setDatabase('test');
         $this->driver->setTable('test');
-        $this->driver->insert(['A', 'B', 'C']);
+        $header = ['A', 'B', 'C', 'D', 'E'];
+        foreach ($header as $index => $column) {
+            $this->driver->set(1, $index + 1, $column);
+        }
+        $this->driver->insert(['B' => 1, 'C' => 2, 'D' => 3]);
     }
 
     public function testAll()

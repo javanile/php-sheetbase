@@ -295,6 +295,23 @@ class Google implements DriverInterface
 	}
 
     /**
+     *
+     */
+    protected function getTableHeader()
+    {
+        $header = [];
+        $headerRow = $this->getRow(0);
+        foreach ($headerRow as $colIndex => $colName) {
+            if (empty($colName)) {
+                continue;
+            }
+            $header[$colName] = $colIndex;
+        }
+
+        return $header;
+    }
+
+    /**
      * @param $row
      * @param $col
      * @param $value
@@ -422,8 +439,11 @@ class Google implements DriverInterface
     {
         $this->requireSheet();
 
-        $sheetTitle = $this->sheet->getProperties()->getTitle();
+        if (self::isKeyValueRow($row)) {
+            $row = $this->convertKeyValueRow($row);
+        }
 
+        $sheetTitle = $this->sheet->getProperties()->getTitle();
         $range = $sheetTitle.'!A:A';
         $requestBody = new \Google\Service\Sheets\ValueRange([
             'values' => [
@@ -480,10 +500,41 @@ class Google implements DriverInterface
     public function getRow($row)
     {
         $this->requireSheetTitle();
-        $range = '\''.$this->sheetTitle.'\'!'.$row.':'.$row;
+        $range = '\''.$this->sheetTitle.'\'!A'.($row + 1).':'.($row + 1);
         $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
 
         return $response->values[0];
+    }
+
+    /**
+     *
+     */
+    protected function convertKeyValueRow($row)
+    {
+        $tempRow = $row;
+        $size = count($tempRow);
+        if (!isset($row[$size - 1])) {
+            $row[$size - 1] = '';
+        }
+        $header = $this->getTableHeader();
+        foreach ($tempRow as $key => $value) {
+            if (isset($header[$key])) {
+                if (isset($row[$header[$key]])) {
+                    $row[] = $row[$header[$key]];
+                }
+                $row[$header[$key]] = $value;
+                unset($row[$key]);
+            }
+        }
+        $maxKey = max(array_keys($row));
+        for ($index = 0; $index < $maxKey; $index++) {
+            if (!isset($row[$index])) {
+                $row[$index] = '';
+            }
+        }
+        ksort($row);
+
+        return $row;
     }
 
     /**
@@ -696,5 +747,17 @@ class Google implements DriverInterface
         }
 
         return $newValues;
+    }
+
+    /**
+     *
+     */
+    protected static function isKeyValueRow($row)
+    {
+        if (array() === $row) {
+            return false;
+        }
+
+        return array_keys($row) !== range(0, count($row) - 1);
     }
 }
