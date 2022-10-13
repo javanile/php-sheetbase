@@ -526,7 +526,7 @@ class Google implements DriverInterface
                 unset($row[$key]);
             }
         }
-        $maxKey = max(array_keys($row));
+	$maxKey = max(array_map('intval', array_keys($row)));
         for ($index = 0; $index < $maxKey; $index++) {
             if (!isset($row[$index])) {
                 $row[$index] = '';
