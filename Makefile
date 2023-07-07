@@ -2,7 +2,10 @@
 
 .PHONY: dist
 
-install:
+build:
+	@docker-compose build
+
+install: build
 	@docker-compose run --rm composer install
 
 require-google-apiclient:
